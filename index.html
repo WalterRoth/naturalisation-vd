@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Naturalisation</title>
+<style>
+  :root {
+    --bg: #f4f1ec; --bg2: #ebe6de; --card: #ffffff; --ink: #1c1b1a; --mute: #77736c; --line: #e6e1d8;
+    --red: #d52b1e; --red2: #b0231a; --redsoft: #fbe8e6;
+    --green: #1f8a5b; --greensoft: #e3f3ea; --amber: #c98a12; --ambersoft: #fbf1dc;
+    --grey: #d9d4cb; --shadow: 0 1px 2px rgba(40,30,20,.05), 0 6px 20px rgba(40,30,20,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121212; --bg2: #1a1a1a; --card: #1e1e1e; --ink: #f1efea; --mute: #9b978f; --line: #2e2c29;
+      --redsoft: #3a1a17; --greensoft: #15302a; --green: #4fc48d; --ambersoft: #352a12; --amber: #e8b24a;
+      --grey: #3a3733; --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 16px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 720px; margin: 0 auto; padding: 18px 16px 60px; }
+  button { font: inherit; color: inherit; }
+  .hidden { display: none !important; }
+
+  /* hero */
+  .hero { background: linear-gradient(135deg, var(--red) 0%, var(--red2) 100%); color: #fff;
+          border-radius: 20px; padding: 20px 20px 18px; position: relative; overflow: hidden; box-shadow: var(--shadow); }
+  .hero::after { content: ""; position: absolute; right: -28px; top: -28px; width: 150px; height: 150px;
+                 background:
+                   linear-gradient(#fff,#fff) center/26% 74% no-repeat,
+                   linear-gradient(#fff,#fff) center/74% 26% no-repeat;
+                 opacity: .13; }
+  .hero h1 { margin: 0; font-size: 22px; letter-spacing: -.01em; }
+  .hero .when { opacity: .9; font-size: 14px; margin-top: 2px; }
+  .syncb { display: inline-block; margin-top: 8px; font-size: 12px; padding: 2px 9px; border-radius: 99px; background: rgba(255,255,255,.16); }
+  .syncb.ok::before { content: "● "; color: #9ff0c4; }
+  .syncb.off::before, .syncb.local::before { content: "● "; color: #ffd27a; }
+  .hero .count { display: flex; gap: 18px; margin-top: 16px; flex-wrap: wrap; }
+  .hero .count div { min-width: 70px; }
+  .hero .count b { display: block; font-size: 28px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .hero .count span { font-size: 12px; opacity: .85; text-transform: uppercase; letter-spacing: .06em; }
+
+  .card { background: var(--card); border-radius: 18px; padding: 18px; margin-top: 14px; box-shadow: var(--shadow);
+          border: 1px solid var(--line); }
+  .label { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--mute); margin: 0 0 10px; font-weight: 600; }
+  .sub { color: var(--mute); font-size: 14px; }
+
+  /* tiles */
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  @media (max-width: 520px) { .tiles { grid-template-columns: repeat(2, 1fr); } }
+  .tile { background: var(--bg); border-radius: 14px; padding: 12px; }
+  .tile b { display: block; font-size: 24px; font-variant-numeric: tabular-nums; line-height: 1.15; }
+  .tile span { font-size: 12px; color: var(--mute); }
+  .tile.g b { color: var(--green); } .tile.a b { color: var(--amber); } .tile.r b { color: var(--red); }
+
+  /* stacked bars */
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--mute); margin: 4px 0 12px; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+  .trow { display: grid; grid-template-columns: 110px 1fr 46px; gap: 10px; align-items: center; margin: 9px 0; font-size: 14px; }
+  .trow .n { text-align: right; color: var(--mute); font-variant-numeric: tabular-nums; font-size: 13px; }
+  .sbar { display: flex; height: 10px; border-radius: 99px; overflow: hidden; background: var(--grey); }
+  .sbar i { display: block; height: 100%; transition: width .5s ease; }
+  .c-m { background: var(--green); } .c-p { background: #7cc6a0; } .c-w { background: var(--red); } .c-n { background: var(--grey); }
+  @media (prefers-color-scheme: dark) { .c-p { background: #2f7a58; } }
+  .grouphead { font-size: 13px; font-weight: 600; margin: 14px 0 2px; }
+
+  /* chips + buttons */
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .chip { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 7px 14px;
+          font-size: 14px; cursor: pointer; user-select: none; transition: all .15s; }
+  .chip.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .modes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .mode { text-align: left; border: 1.5px solid var(--line); background: var(--card); border-radius: 14px; padding: 12px 14px; cursor: pointer; transition: all .15s; }
+  .mode b { display: block; font-size: 15px; }
+  .mode span { font-size: 13px; color: var(--mute); line-height: 1.35; display: block; margin-top: 2px; }
+  .mode.on { border-color: var(--red); background: var(--redsoft); }
+  .cta { width: 100%; padding: 15px; font-size: 17px; font-weight: 650; border: 0; border-radius: 14px; margin-top: 14px;
+         background: var(--red); color: #fff; cursor: pointer; box-shadow: 0 4px 14px rgba(213,43,30,.28); transition: transform .08s; }
+  .cta:active { transform: scale(.985); }
+  .ghost { background: transparent; border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font-size: 14px; color: var(--mute); cursor: pointer; }
+  .toggle { display: flex; align-items: center; gap: 10px; margin-top: 14px; font-size: 14px; cursor: pointer; user-select: none; }
+  .sw { width: 40px; height: 24px; border-radius: 99px; background: var(--grey); position: relative; transition: background .2s; flex: none; }
+  .sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left .2s; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+  .toggle.on .sw { background: var(--green); } .toggle.on .sw::after { left: 19px; }
+
+  /* history */
+  .hist { list-style: none; margin: 0; padding: 0; }
+  .hist li { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .hist li:last-child { border-bottom: 0; }
+  .hist .t { font-size: 14px; } .hist .d { font-size: 12px; color: var(--mute); }
+  .pill { font-size: 13px; font-weight: 650; padding: 3px 10px; border-radius: 99px; align-self: center; font-variant-numeric: tabular-nums; }
+  .pill.g { background: var(--greensoft); color: var(--green); } .pill.a { background: var(--ambersoft); color: var(--amber); } .pill.r { background: var(--redsoft); color: var(--red); }
+  .week { display: flex; gap: 6px; margin-top: 12px; }
+  .week div { flex: 1; text-align: center; font-size: 11px; color: var(--mute); }
+  .week i { display: block; height: 34px; border-radius: 8px; background: var(--bg); margin-bottom: 4px; position: relative; overflow: hidden; }
+  .week i em { position: absolute; left: 0; right: 0; bottom: 0; background: var(--green); opacity: .85; }
+  .weak li { margin: 8px 0; font-size: 14px; }
+  .weak b { color: var(--green); font-weight: 600; }
+
+  /* quiz */
+  .qtop { display: flex; align-items: center; gap: 12px; }
+  .qtop .ghost { flex: none; }
+  .qprog { flex: 1; height: 8px; border-radius: 99px; background: var(--grey); overflow: hidden; }
+  .qprog i { display: block; height: 100%; background: var(--red); transition: width .3s ease; }
+  .qmeta { display: flex; justify-content: space-between; margin: 12px 2px 0; font-size: 13px; color: var(--mute); }
+  .tag { display: inline-block; background: var(--bg); border-radius: 99px; padding: 3px 10px; font-size: 12px; color: var(--mute); }
+  .qcard { animation: in .25s ease; }
+  @keyframes in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .q { font-size: 21px; font-weight: 650; line-height: 1.35; margin: 4px 0 16px; letter-spacing: -.005em; }
+  .opt { display: flex; gap: 12px; align-items: center; width: 100%; text-align: left; padding: 13px 14px; margin: 9px 0;
+         font-size: 16.5px; border: 1.5px solid var(--line); border-radius: 14px; background: var(--card); cursor: pointer; transition: all .15s; }
+  .opt:hover:not(:disabled) { border-color: var(--mute); }
+  .opt .k { flex: none; width: 28px; height: 28px; border-radius: 8px; background: var(--bg); display: grid; place-items: center;
+            font-size: 13px; font-weight: 700; color: var(--mute); }
+  .opt.ok { border-color: var(--green); background: var(--greensoft); } .opt.ok .k { background: var(--green); color: #fff; }
+  .opt.ko { border-color: var(--red); background: var(--redsoft); animation: shake .3s; } .opt.ko .k { background: var(--red); color: #fff; }
+  .opt.dim { opacity: .5; }
+  .opt:disabled { cursor: default; }
+  @keyframes shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+  .fb { margin-top: 12px; padding: 12px 14px; border-radius: 12px; font-size: 15px; animation: in .2s ease; }
+  .fb.ok { background: var(--greensoft); color: var(--green); } .fb.ko { background: var(--redsoft); color: var(--red); }
+  .fb b { font-weight: 650; }
+  .streak { font-size: 13px; color: var(--amber); font-weight: 600; }
+  .reveal { margin-top: 12px; padding: 14px; border-radius: 12px; background: var(--greensoft); animation: in .2s ease; }
+  .reveal b { color: var(--green); font-size: 18px; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+  .two button { padding: 13px; border-radius: 12px; font-weight: 600; cursor: pointer; border: 1.5px solid var(--line); background: var(--card); }
+  .two .no { color: var(--red); } .two .yes { color: var(--green); }
+  @media (hover: none) { .hint { display: none; } }
+  .hint { text-align: center; font-size: 12px; color: var(--mute); margin-top: 10px; }
+
+  /* result */
+  .ring { width: 150px; height: 150px; margin: 6px auto 4px; position: relative; }
+  .ring svg { transform: rotate(-90deg); }
+  .ring .v { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+  .ring .v b { font-size: 34px; display: block; line-height: 1; }
+  .ring .v span { font-size: 13px; color: var(--mute); }
+  .msg { text-align: center; font-size: 17px; font-weight: 600; margin: 8px 0 2px; }
+  .missed { list-style: none; padding: 0; margin: 0; }
+  .missed li { padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+  .missed li:last-child { border-bottom: 0; }
+  .missed .a { color: var(--green); font-weight: 600; display: block; margin-top: 2px; }
+  .missed .y { color: var(--red); font-size: 13px; display: block; text-decoration: line-through; opacity: .8; }
+
+  .list li { margin: 10px 0; font-size: 15px; }
+  .list b { color: var(--green); }
+  details summary { cursor: pointer; color: var(--mute); font-size: 14px; }
+  textarea { width: 100%; min-height: 90px; margin-top: 8px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); padding: 8px; font: 12px ui-monospace, Menlo, monospace; }
+</style>
+</head>
+<body>
+<main>
+
+<!-- ============ HOME ============ -->
+<section id="home">
+  <div class="hero">
+    <h1>Audition de naturalisation</h1>
+    <div class="when" id="hWhen"></div>
+    <div class="syncb local" id="sync">Sur cet appareil seulement</div>
+    <div class="count">
+      <div><b id="hDays">–</b><span>jours restants</span></div>
+      <div><b id="hPct">0 %</b><span>maîtrisé</span></div>
+      <div><b id="hStreak">0</b><span>jours d'affilée</span></div>
+      <div><b id="hToday">0</b><span>réponses aujourd'hui</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="label">Où tu en es</p>
+    <div class="tiles">
+      <div class="tile"><b id="tSeen">0</b><span>vues sur <i id="tTot" style="font-style:normal">128</i></span></div>
+      <div class="tile g"><b id="tMast">0</b><span>maîtrisées</span></div>
+      <div class="tile a"><b id="tProg">0</b><span>en cours</span></div>
+      <div class="tile r"><b id="tWeak">0</b><span>à revoir</span></div>
+    </div>
+    <div class="legend">
+      <span><i class="c-m"></i>maîtrisée (3 justes d'affilée)</span>
+      <span><i class="c-p"></i>en cours</span>
+      <span><i class="c-w"></i>ratée la dernière fois</span>
+      <span><i class="c-n"></i>jamais vue</span>
+    </div>
+    <div id="bars"></div>
+  </div>
+
+  <div class="card">
+    <p class="label">Session</p>
+    <div class="modes" id="modes"></div>
+    <p class="label" style="margin-top:16px">Questions</p>
+    <div class="row" id="levels"></div>
+    <div class="row" id="themes" style="margin-top:8px"></div>
+    <div class="toggle" id="speak"><div class="sw"></div><span>Lecture à voix haute</span></div>
+    <button class="cta" id="start">Commencer</button>
+  </div>
+
+  <div class="card">
+    <p class="label">Historique</p>
+    <div class="week" id="week"></div>
+    <ul class="hist" id="hist" style="margin-top:8px"></ul>
+    <p class="sub" id="histEmpty">Aucune session encore. Ta première apparaîtra ici dès la fin de la série (ou en cliquant Arrêter).</p>
+  </div>
+
+  <div class="card" id="weakCard">
+    <p class="label">Les plus difficiles pour toi</p>
+    <ol class="weak" id="weak"></ol>
+  </div>
+
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <button class="ghost" id="listBtn">Toutes les questions et réponses</button>
+      <button class="ghost" id="reset">Tout remettre à zéro</button>
+    </div>
+    <details style="margin-top:12px">
+      <summary>Transférer ma progression vers un autre appareil</summary>
+      <p class="sub">La progression est enregistrée sur cet appareil. Pour la reprendre ailleurs, copie ce code et colle-le sur l'autre appareil.</p>
+      <div class="row"><button class="ghost" id="exp">Copier mon code</button><button class="ghost" id="imp">Importer un code</button></div>
+      <textarea id="xfer" placeholder="Le code apparaît ou se colle ici"></textarea>
+    </details>
+  </div>
+</section>
+
+<!-- ============ QUIZ ============ -->
+<section id="quiz" class="hidden">
+  <div class="qtop">
+    <button class="ghost" id="quit">✕ Arrêter</button>
+    <div class="qprog"><i id="qbar"></i></div>
+    <span class="sub" id="qpos" style="font-variant-numeric:tabular-nums"></span>
+  </div>
+  <div class="qmeta"><span class="tag" id="qtag"></span><span class="streak" id="qstreak"></span></div>
+  <div class="card qcard" id="qcard">
+    <div class="q" id="qtext"></div>
+    <div id="opts"></div>
+    <div id="fb"></div>
+    <div id="oral" class="hidden">
+      <button class="cta" id="showAns" style="margin-top:4px">Montrer la réponse</button>
+      <div class="reveal hidden" id="ansBox"></div>
+      <div class="two hidden" id="selfGrade">
+        <button class="no" id="gradeKo">Je ne savais pas</button>
+        <button class="yes" id="gradeOk">Je savais</button>
+      </div>
+    </div>
+  </div>
+  <button class="cta hidden" id="next">Suivante →</button>
+  <div class="hint" id="hint"></div>
+</section>
+
+<!-- ============ RESULT ============ -->
+<section id="result" class="hidden">
+  <div class="card">
+    <div class="ring">
+      <svg width="150" height="150" viewBox="0 0 150 150">
+        <circle cx="75" cy="75" r="64" fill="none" stroke="var(--grey)" stroke-width="12"/>
+        <circle id="ringArc" cx="75" cy="75" r="64" fill="none" stroke="var(--green)" stroke-width="12" stroke-linecap="round"
+                stroke-dasharray="402" stroke-dashoffset="402" style="transition: stroke-dashoffset .9s ease"/>
+      </svg>
+      <div class="v"><div><b id="rScore"></b><span id="rOf"></span></div></div>
+    </div>
+    <div class="msg" id="rMsg"></div>
+    <p class="sub" style="text-align:center;margin:0 0 6px" id="rSub"></p>
+    <button class="cta" id="again">Rejouer les erreurs</button>
+    <button class="ghost" id="back" style="width:100%;margin-top:10px;padding:12px">Retour à l'accueil</button>
+  </div>
+  <div class="card" id="missedCard">
+    <p class="label">À retenir</p>
+    <ul class="missed" id="missed"></ul>
+  </div>
+</section>
+
+<!-- ============ LIST ============ -->
+<section id="list" class="hidden">
+  <div class="card">
+    <p class="label">Toutes les questions (filtres actuels)</p>
+    <ol class="list" id="listOl"></ol>
+    <button class="cta" id="back2">Retour</button>
+  </div>
+</section>
+
+</main>
+
+<script>
+const BANK = [{"id": 1, "q": "Quel est le plus grand canton suisse (superficie) ?", "a": ["Zurich", "Grisons", "Valais", "Vaud"], "c": 1, "t": "Géographie", "l": "Suisse"}, {"id": 2, "q": "Combien y a-t-il de cantons en Suisse ?", "a": ["26", "28", "25", "23"], "c": 0, "t": "Géographie", "l": "Suisse"}, {"id": 3, "q": "Quel est le plus grand lac entièrement suisse ?", "a": ["Le Lac Léman", "Le Lac de Neuchâtel", "Le Lac Majeur", "Le Lac de Zurich"], "c": 1, "t": "Géographie", "l": "Suisse"}, {"id": 4, "q": "Quel canton est officiellement bilingue (deux langues officielles) ?", "a": ["Genève", "Bâle", "Vaud", "Fribourg"], "c": 3, "t": "Géographie", "l": "Suisse"}, {"id": 5, "q": "La prairie du Grütli se trouve au bord du …", "a": ["Lac de Bienne", "Lac de Constance", "Lac de Zurich", "Lac des Quatre-Cantons"], "c": 3, "t": "Géographie", "l": "Suisse"}, {"id": 6, "q": "Combien y a-t-il d'habitants en Suisse ?", "a": ["Environ 10 millions", "Environ 6 millions", "Environ 5 millions", "Environ 9 millions"], "c": 3, "t": "Géographie", "l": "Suisse"}, {"id": 7, "q": "Le Palais fédéral se trouve à …", "a": ["Zurich", "Fribourg", "Berne", "Lucerne"], "c": 2, "t": "Géographie", "l": "Suisse"}, {"id": 8, "q": "On parle le romanche dans le canton …", "a": ["de Saint-Gall", "du Valais", "d’Uri", "des Grisons"], "c": 3, "t": "Géographie", "l": "Suisse"}, {"id": 9, "q": "Quel pays n'a pas de frontière avec la Suisse ?", "a": ["Italie", "Belgique", "France", "Allemagne"], "c": 1, "t": "Géographie", "l": "Suisse"}, {"id": 10, "q": "Le lac Léman est situé en Suisse et en …", "a": ["France", "Italie", "Autriche", "Allemagne"], "c": 0, "t": "Géographie", "l": "Suisse"}, {"id": 11, "q": "Quelle est la plus grande ville de Suisse ?", "a": ["Genève", "Berne", "Zurich", "Bâle"], "c": 2, "t": "Géographie", "l": "Suisse"}, {"id": 12, "q": "Le plus haut sommet suisse est …", "a": ["La Dent Blanche", "La Pointe Dufour", "Le Cervin", "La Jungfrau"], "c": 1, "t": "Géographie", "l": "Suisse"}, {"id": 13, "q": "Le Cervin se trouve dans le canton …", "a": ["de Neuchâtel", "de Genève", "du Valais", "de Vaud"], "c": 2, "t": "Géographie", "l": "Suisse"}, {"id": 14, "q": "Le canton le plus au nord de la Suisse est …", "a": ["Grisons", "Bâle", "Uri", "Schaffhouse"], "c": 3, "t": "Géographie", "l": "Suisse"}, {"id": 15, "q": "Une de ces réponses n'indique pas une région naturelle de la Suisse. Laquelle ?", "a": ["Jura", "Alpes", "Piémont", "Plateau"], "c": 2, "t": "Géographie", "l": "Suisse"}, {"id": 16, "q": "Quelle est la capitale de la Suisse ?", "a": ["Zurich", "Bâle", "Genève", "Berne"], "c": 3, "t": "Géographie", "l": "Suisse"}, {"id": 17, "q": "Qui préside le Conseil fédéral en 2026 ?", "a": ["Guy Parmelin", "Karin Keller-Sutter", "Beat Jans", "Ignazio Cassis"], "c": 0, "t": "Politique", "l": "Suisse"}, {"id": 18, "q": "Combien de membres compte le Conseil fédéral ?", "a": ["7", "5", "8", "9"], "c": 0, "t": "Politique", "l": "Suisse"}, {"id": 19, "q": "Pour combien de temps est élu/e le/la président/e de la Confédération ?", "a": ["4 ans", "5 ans", "1 an", "2 ans"], "c": 2, "t": "Politique", "l": "Suisse"}, {"id": 20, "q": "Quels sont les 3 pouvoirs du système politique en Suisse ?", "a": ["Législatif, exécutif, judiciaire", "Parlementaire, civil, religieux", "Syndical, médiatique, judiciaire", "Législatif, religieux, syndical"], "c": 0, "t": "Politique", "l": "Suisse"}, {"id": 21, "q": "Les citoyens peuvent demander une consultation populaire (votation) sur un nouveau texte de loi par …", "a": ["le lobbying", "une manifestation", "un référendum", "une grève"], "c": 2, "t": "Politique", "l": "Suisse"}, {"id": 22, "q": "Quelle chambre du Parlement fédéral représente le peuple ?", "a": ["Le Conseil national", "Le Conseil des Etats", "Le Conseil fédéral", "Le Grand Conseil"], "c": 0, "t": "Politique", "l": "Suisse"}, {"id": 23, "q": "Le Palais fédéral est le siège …", "a": ["du Musée national suisse", "du Parlement", "de l'Université", "de la Télévision suisse"], "c": 1, "t": "Politique", "l": "Suisse"}, {"id": 24, "q": "Dans quel texte de loi suisse se trouvent les droits fondamentaux ?", "a": ["Code pénal", "Constitution", "Code civil", "Règlement communal"], "c": 1, "t": "Politique", "l": "Suisse"}, {"id": 25, "q": "Qui élit les membres du Tribunal fédéral ?", "a": ["le Conseil fédéral", "l'Assemblée fédérale", "le peuple et les cantons", "les communes"], "c": 1, "t": "Politique", "l": "Suisse"}, {"id": 26, "q": "La Suisse est gouvernée par…", "a": ["Un Conseil fédéral", "Un Président", "Un Roi", "Un Premier ministre"], "c": 0, "t": "Politique", "l": "Suisse"}, {"id": 27, "q": "Quel est le rôle du pouvoir législatif ?", "a": ["Il vérifie les lois", "Il applique les lois", "Il élabore les lois", "Il contrôle les routes"], "c": 2, "t": "Politique", "l": "Suisse"}, {"id": 28, "q": "Quel est le rôle du pouvoir exécutif ?", "a": ["Il applique les lois et gouverne", "Il décide des lois qui régissent l'Etat", "Il s'assure que les lois soient bien appliquées", "Il élit le gouvernement"], "c": 0, "t": "Politique", "l": "Suisse"}, {"id": 29, "q": "Qui représente le pouvoir législatif au niveau fédéral ?", "a": ["Le Parlement fédéral", "Le Conseil d'Etat", "Le Grand Conseil", "La Croix-Rouge"], "c": 0, "t": "Politique", "l": "Suisse"}, {"id": 30, "q": "En Suisse, qui élit le Conseil fédéral ?", "a": ["Le Conseil d'Etat", "Le peuple", "L'Assemblée fédérale (le Conseil national et le Conseil des Etats)", "Les cantons"], "c": 2, "t": "Politique", "l": "Suisse"}, {"id": 31, "q": "Quel parti politique suisse est de gauche ?", "a": ["Parti libéral-radical (PLR)", "Parti socialiste (PS)", "Union démocratique du centre (UDC)", "Le Centre"], "c": 1, "t": "Politique", "l": "Suisse"}, {"id": 32, "q": "Le Tribunal fédéral se trouve à …", "a": ["Lausanne", "Genève", "Berne", "Fribourg"], "c": 0, "t": "Politique", "l": "Suisse"}, {"id": 33, "q": "Le plus ancien pacte de la Confédération a été signé en 1291 par les cantons de …", "a": ["Vaud, Genève, Neuchâtel", "Bâle, Soleure, Argovie", "Uri, Schwytz, Unterwald", "Uri, Glaris, Grisons"], "c": 2, "t": "Histoire", "l": "Suisse"}, {"id": 34, "q": "Quelle est la date souvent considérée comme celle de la naissance de la Suisse ?", "a": ["1296", "1291", "1294", "1390"], "c": 1, "t": "Histoire", "l": "Suisse"}, {"id": 35, "q": "Les premiers Confédérés ont prêté serment …", "a": ["Au château de Chillon", "Sur la plaine du Grütli", "Sur le Pont de la Chapelle à Lucerne", "Au Palais de Rumine"], "c": 1, "t": "Histoire", "l": "Suisse"}, {"id": 36, "q": "Guillaume Tell était …", "a": ["Un célèbre soldat au service d'une puissance étrangère", "Un personnage légendaire qui s'est battu contre des seigneurs étrangers", "Un aristocrate de la famille des Habsbourg", "Un chef de la guerre des paysans"], "c": 1, "t": "Histoire", "l": "Suisse"}, {"id": 37, "q": "Le drapeau suisse s'inspire du drapeau d'un canton. Lequel ?", "a": ["Schwytz", "Vaud", "Berne", "Valais"], "c": 0, "t": "Histoire", "l": "Suisse"}, {"id": 38, "q": "Quelle guerre civile entre cantons conservateurs et cantons progressistes a favorisé la création de la Suisse moderne ?", "a": ["la bataille de Sempach", "la guerre de Cent Ans", "la guerre du Sonderbund", "la guerre de Sécession"], "c": 2, "t": "Histoire", "l": "Suisse"}, {"id": 39, "q": "La première Constitution fédérale date de …", "a": ["1291", "1515", "1848", "1874"], "c": 2, "t": "Histoire", "l": "Suisse"}, {"id": 40, "q": "Quelle est la devise de la Confédération ?", "a": ["Un pour tous, tous pour un", "Liberté et patrie", "Liberté, égalité, fraternité", "L'union fait la force"], "c": 0, "t": "Histoire", "l": "Suisse"}, {"id": 41, "q": "Qu'est-ce qu'on fête le 1er août ?", "a": ["L'alliance des 26 cantons", "L'accord entre les 7 cantons romands", "Le pacte fédéral de Uri, Schwytz et Unterwald", "La victoire des 8 cantons primitifs"], "c": 2, "t": "Histoire", "l": "Suisse"}, {"id": 42, "q": "La Landsgemeinde est", "a": ["Une assemblée pendant laquelle on vote à main levée", "Un plat typique", "Une danse", "Une bataille"], "c": 0, "t": "Histoire", "l": "Suisse"}, {"id": 43, "q": "Qui a fondé la Croix-Rouge ?", "a": ["Henri Dunant", "Major Davel", "Albert Hofmann", "Henri Guisan"], "c": 0, "t": "Histoire", "l": "Suisse"}, {"id": 44, "q": "Pendant les deux guerres mondiales, la Suisse …", "a": ["est restée neutre", "a combattu aux côtés de la France", "a combattu aux côtés des Etats-Unis", "a combattu aux côtés de l'Allemagne"], "c": 0, "t": "Histoire", "l": "Suisse"}, {"id": 45, "q": "Les femmes suisses ont obtenu le droit de vote au niveau fédéral dans …", "a": ["les années 60", "les années 50", "les années 70", "les années 80"], "c": 2, "t": "Histoire", "l": "Suisse"}, {"id": 46, "q": "Quel canton est devenu le 26ème canton suisse ?", "a": ["Neuchâtel", "Vaud", "Jura", "Valais"], "c": 2, "t": "Histoire", "l": "Suisse"}, {"id": 47, "q": "La Suisse est entrée à l'ONU en …", "a": ["2002", "1989", "1945", "1920"], "c": 0, "t": "Histoire", "l": "Suisse"}, {"id": 48, "q": "La Suisse n'est pas dans l'UE (Union Européenne), mais elle a passé avec l'UE des …", "a": ["Accords bilatéraux", "Accords institutionnels", "Accords militaires", "Accords unilatéraux"], "c": 0, "t": "Histoire", "l": "Suisse"}, {"id": 49, "q": "Quelle est la langue officielle la plus parlée en Suisse ?", "a": ["Français", "Allemand", "Italien", "Romanche"], "c": 1, "t": "Social", "l": "Suisse"}, {"id": 50, "q": "Qu'est-ce que la \"barrière de roesti\" ou \"Röstigraben\" ?", "a": ["Un plat typiquement suisse", "Le titre d'une chanson", "Les différences de mentalité entre la Suisse romande et la Suisse alémanique", "Un quartier de la ville de Berne"], "c": 2, "t": "Social", "l": "Suisse"}, {"id": 51, "q": "Que signifie l'abréviation CH ?", "a": ["Centre helvétique", "Commune helvétique", "Communauté helvétique", "Confédération helvétique"], "c": 3, "t": "Social", "l": "Suisse"}, {"id": 52, "q": "Qu'est-ce que le \"Schwyzerdütsch\" ?", "a": ["Une spécialité culinaire", "Une montagne", "Le dialecte suisse-allemand", "Un sport"], "c": 2, "t": "Social", "l": "Suisse"}, {"id": 53, "q": "Quel héros de l'indépendance suisse est toujours représenté avec une arbalète et une pomme ?", "a": ["Major Davel", "Charlemagne", "Guillaume Tell", "Heidi"], "c": 2, "t": "Social", "l": "Suisse"}, {"id": 54, "q": "Quelles sont les 4 langues nationales de la Suisse ?", "a": ["allemand, français, anglais, romanche", "français, italien, suisse-allemand, romanche", "français, allemand, italien, romanche", "anglais, français, italien, espagnol"], "c": 2, "t": "Social", "l": "Suisse"}, {"id": 55, "q": "Quel personnage féminin se trouve sur plusieurs pièces de monnaie suisse ?", "a": ["Helvetia", "Heidi", "Ursula Andress", "Marie"], "c": 0, "t": "Social", "l": "Suisse"}, {"id": 56, "q": "En Suisse, payer des impôts est …", "a": ["une obligation", "une liberté", "un choix", "une possibilité facultative"], "c": 0, "t": "Social", "l": "Suisse"}, {"id": 57, "q": "Quel aliment compose principalement les « rösti » (plat typique suisse) ?", "a": ["La pomme de terre", "La carotte", "L’oignon", "Le chou"], "c": 0, "t": "Social", "l": "Suisse"}, {"id": 58, "q": "Dans quelle ville peut-on voir la statue de Guillaume Tell ?", "a": ["Schwytz", "Altdorf", "Genève", "Sion"], "c": 1, "t": "Social", "l": "Suisse"}, {"id": 59, "q": "Qu'est-ce qu'un cor des Alpes ?", "a": ["Un instrument de musique", "Un animal", "Une fleur", "Un champignon"], "c": 0, "t": "Social", "l": "Suisse"}, {"id": 60, "q": "Dans quelle ville suisse se trouve la \"fosse aux ours\" ?", "a": ["Martigny", "Zurich", "Bâle", "Berne"], "c": 3, "t": "Social", "l": "Suisse"}, {"id": 61, "q": "Que protège la Garde Suisse depuis 1506 ?", "a": ["Le Pape", "Le Carnaval de Bâle", "Le Parlement", "Le siège du CIO"], "c": 0, "t": "Social", "l": "Suisse"}, {"id": 62, "q": "Où se fête le plus grand carnaval de Suisse ?", "a": ["Bâle", "Lausanne", "Genève", "Sion"], "c": 0, "t": "Social", "l": "Suisse"}, {"id": 63, "q": "Citez un sport national", "a": ["Le base-ball", "Le cricket", "Le waterpolo", "La lutte"], "c": 3, "t": "Social", "l": "Suisse"}, {"id": 64, "q": "Tout homme de nationalité suisse est en principe astreint au …", "a": ["Concours d'admission des sapeurs-pompiers", "Travail", "Service militaire", "Service civil"], "c": 2, "t": "Social", "l": "Suisse"}, {"id": 65, "q": "De quelle couleur est le drapeau vaudois ?", "a": ["Bleu et blanc", "Rouge et blanc", "Vert et blanc", "Rouge et noir"], "c": 2, "t": "Géographie", "l": "Canton"}, {"id": 66, "q": "Quels mots figurent sur le drapeau du Canton de Vaud ?", "a": ["Liberté, égalité, fraternité", "Liberté et patrie", "Forts et libres", "Liberté et prospérité"], "c": 1, "t": "Géographie", "l": "Canton"}, {"id": 67, "q": "Au bord de quel lac se trouve la ville d'Yverdon-les-Bains ?", "a": ["Lac Léman", "Lac de Joux", "Lac de Neuchâtel", "Lac Majeur"], "c": 2, "t": "Géographie", "l": "Canton"}, {"id": 68, "q": "Quel est le chef-lieu du canton de Vaud ?", "a": ["Lausanne", "Nyon", "Montreux", "Aigle"], "c": 0, "t": "Géographie", "l": "Canton"}, {"id": 69, "q": "Lausanne se trouve au bord du …", "a": ["Lac Noir", "Lac des Quatre-Cantons", "Lac Léman", "Lac de Joux"], "c": 2, "t": "Géographie", "l": "Canton"}, {"id": 70, "q": "Quel canton n'a pas de frontière commune avec le canton de Vaud ?", "a": ["Jura", "Valais", "Fribourg", "Genève"], "c": 0, "t": "Géographie", "l": "Canton"}, {"id": 71, "q": "Quel fleuve traverse le lac Léman ?", "a": ["Le Rhône", "Le Doubs", "La Sarine", "Le Rhin"], "c": 0, "t": "Géographie", "l": "Canton"}, {"id": 72, "q": "Le plus haut sommet vaudois est …", "a": ["Le sommet des Diablerets", "La Dent de Jaman", "Les Pléiades", "Les Rochers de Naye"], "c": 0, "t": "Géographie", "l": "Canton"}, {"id": 73, "q": "Quel château célèbre se trouve au bord du lac Léman ?", "a": ["Le château de Gruyère", "Le château de Grandson", "Le château de Lenzbourg", "Le château de Chillon"], "c": 3, "t": "Géographie", "l": "Canton"}, {"id": 74, "q": "Quelle région a été classée au patrimoine mondial de l'UNESCO en juin 2007 ?", "a": ["Lavaux", "Le Signal de Bougy", "Les Diablerets", "Le Gros-de-Vaud"], "c": 0, "t": "Géographie", "l": "Canton"}, {"id": 75, "q": "Combien de personnes habitent le canton de Vaud ?", "a": ["Environ 850'000", "Environ 2 millions", "Environ 500'000", "Environ 1,2 million"], "c": 0, "t": "Géographie", "l": "Canton"}, {"id": 76, "q": "Quelle rivière traverse le canton de Vaud ?", "a": ["Le Doubs", "La Limmat", "La Venoge", "L'Aar"], "c": 2, "t": "Géographie", "l": "Canton"}, {"id": 77, "q": "Le chef-lieu du district Riviera-Pays d'Enhaut est …", "a": ["Payerne", "Vevey", "Nyon", "Echallens"], "c": 1, "t": "Géographie", "l": "Canton"}, {"id": 78, "q": "Sur la population du canton de Vaud, les résidents étrangers représentent …", "a": ["environ 10%", "environ 20%", "environ 25%", "environ 30%"], "c": 3, "t": "Géographie", "l": "Canton"}, {"id": 79, "q": "Un de ces monuments ne se trouve pas en ville de Lausanne. Lequel ?", "a": ["Statue de Charlie Chaplin", "Notre–Dame du Valentin", "Château Saint-Maire", "Palais de Rumine"], "c": 0, "t": "Géographie", "l": "Canton"}, {"id": 80, "q": "Quel est le terminus du LEB (chemin de fer) ?", "a": ["Boulens", "Begnins", "Blonay", "Bercher"], "c": 3, "t": "Géographie", "l": "Canton"}, {"id": 81, "q": "Quel est le nom de la Présidente du Conseil d'Etat vaudois ?", "a": ["Rebecca Ruiz", "Christelle Luisier Brodard", "Isabelle Moret", "Nuria Gorrite"], "c": 1, "t": "Politique", "l": "Canton"}, {"id": 82, "q": "Qui est le syndic de Lausanne ?", "a": ["Daniel Brélaz", "Grégoire Junod", "Guy Parmelin", "Pierre-Yves Maillard"], "c": 1, "t": "Politique", "l": "Canton"}, {"id": 83, "q": "Qui représente le pouvoir législatif au niveau cantonal ?", "a": ["Le Conseil d'Etat", "Le Parlement fédéral", "Le Grand Conseil", "La Croix-Rouge"], "c": 2, "t": "Politique", "l": "Canton"}, {"id": 84, "q": "Qui représente le pouvoir exécutif dans le canton de Vaud ?", "a": ["Le Conseil d'Etat", "Le Tribunal cantonal", "Le Grand Conseil", "Le Conseil fédéral"], "c": 0, "t": "Politique", "l": "Canton"}, {"id": 85, "q": "Qui élit le Conseil d'Etat vaudois ?", "a": ["La Municipalité", "Le peuple", "Le Grand Conseil", "Le Conseil fédéral"], "c": 1, "t": "Politique", "l": "Canton"}, {"id": 86, "q": "Que signifie DSAS ?", "a": ["Département du soleil et des affaires solaires", "Département de la santé et de l'action sociale", "Département du sport et de l'activité sportive", "Département du social et des associations sportives"], "c": 1, "t": "Politique", "l": "Canton"}, {"id": 87, "q": "Dans le canton de Vaud, les personnes de nationalité étrangère peuvent à certaines conditions voter, élire et être élues au niveau …", "a": ["fédéral", "fédéral, cantonal et communal", "cantonal", "communal"], "c": 3, "t": "Politique", "l": "Canton"}, {"id": 88, "q": "Pour combien d'années est élu le Conseil d'Etat ?", "a": ["10 ans", "1 an", "2 ans", "5 ans"], "c": 3, "t": "Politique", "l": "Canton"}, {"id": 89, "q": "Combien de membres compte le Grand Conseil vaudois ?", "a": ["250", "350", "150", "20"], "c": 2, "t": "Politique", "l": "Canton"}, {"id": 90, "q": "Quel est le pouvoir judiciaire dans le canton de Vaud ?", "a": ["Grand Conseil", "Conseil d'Etat", "Tribunal cantonal", "Municipalité"], "c": 2, "t": "Politique", "l": "Canton"}, {"id": 91, "q": "Où se trouve le siège du Conseil d'Etat vaudois ?", "a": ["Musée olympique", "Château cantonal (Château Saint-Maire)", "La Cité", "Cathédrale de Lausanne"], "c": 1, "t": "Politique", "l": "Canton"}, {"id": 92, "q": "Quel est le rôle du Ministère public ?", "a": ["conduire les investigations et défendre la société devant les tribunaux", "informer les médias des affaires politiques courantes du canton", "organiser les votations et les élections dans le canton", "surveiller la sphère publique et le fonctionnement des transports"], "c": 0, "t": "Politique", "l": "Canton"}, {"id": 93, "q": "Quelles sont les unités administratives ou politiques du canton de Vaud ?", "a": ["Demi-cantons, villes et quartiers", "Sous-cantons, communes et quartiers", "Districts, arrondissements et communes", "Arrondissements, communes et quartiers"], "c": 2, "t": "Politique", "l": "Canton"}, {"id": 94, "q": "Combien de signatures faut-il obtenir pour qu'une initiative populaire soit soumise au vote au niveau cantonal ?", "a": ["12’000 signatures en 4 mois", "1000 signatures en 1 semaine", "aucune signature", "200 signatures en 1 année"], "c": 0, "t": "Politique", "l": "Canton"}, {"id": 95, "q": "Qui est le porte-parole officiel du gouvernement vaudois ?", "a": ["Les préfets", "Le Chancelier d’Etat", "Les députés", "La presse vaudoise"], "c": 1, "t": "Politique", "l": "Canton"}, {"id": 96, "q": "A partir de quel âge les citoyennes et citoyens suisses peuvent voter au niveau cantonal ?", "a": ["15 ans", "18 ans", "17 ans", "21 ans"], "c": 1, "t": "Politique", "l": "Canton"}, {"id": 97, "q": "Le nom VAUD signifie …", "a": ["pays des forêts", "pays des forts (valides)", "pays des vallées", "pays des bouchons vaudois"], "c": 0, "t": "Histoire", "l": "Canton"}, {"id": 98, "q": "De 1207 à 1536, le Pays de Vaud faisait partie …", "a": ["de l'Italie", "de la France", "de la Savoie", "du Val d'Aoste"], "c": 2, "t": "Histoire", "l": "Canton"}, {"id": 99, "q": "Au XVIe siècle, le Pays de Vaud a été conquis par le canton …", "a": ["de Berne", "de Genève", "du Valais", "du Jura"], "c": 0, "t": "Histoire", "l": "Canton"}, {"id": 100, "q": "Le canton de Vaud est devenu officiellement protestant en …", "a": ["1291", "1536", "1798", "1803"], "c": 1, "t": "Histoire", "l": "Canton"}, {"id": 101, "q": "Le principal réformateur vaudois est …", "a": ["Jean Calvin", "Martin Luther", "John Knox", "Pierre Viret"], "c": 3, "t": "Histoire", "l": "Canton"}, {"id": 102, "q": "Qui était le Major Davel ?", "a": ["Une figure légendaire", "Un patriote vaudois", "Un peintre", "Le vainqueur du Sonderbund"], "c": 1, "t": "Histoire", "l": "Canton"}, {"id": 103, "q": "Le Major Davel est mort …", "a": ["Sur le champ de bataille", "Pendu", "Décapité (la tête coupée)", "Dans son lit"], "c": 2, "t": "Histoire", "l": "Canton"}, {"id": 104, "q": "On célèbre l'indépendance vaudoise le …", "a": ["1er août", "24 janvier", "1er mai", "14 juillet"], "c": 1, "t": "Histoire", "l": "Canton"}, {"id": 105, "q": "L'indépendance vaudoise date de …", "a": ["1798", "1902", "1848", "1291"], "c": 0, "t": "Histoire", "l": "Canton"}, {"id": 106, "q": "Le Canton de Vaud est entré dans la Confédération en …", "a": ["1291", "1515", "1803", "1848"], "c": 2, "t": "Histoire", "l": "Canton"}, {"id": 107, "q": "Quelle femme politique d'origine valdo-genevoise a habité le château de Coppet ?", "a": ["Jeanne d'Arc", "Anna Göldin", "Ella Maillart", "Mme de Staël"], "c": 3, "t": "Histoire", "l": "Canton"}, {"id": 108, "q": "Que représente la date du 14 avril 1803 pour le Canton de Vaud ?", "a": ["L'indépendance vaudoise", "L'entrée du Pays de Vaud dans la Confédération", "La naissance du Général Guisan", "La date d'exécution du Major Davel"], "c": 1, "t": "Histoire", "l": "Canton"}, {"id": 109, "q": "Le premier canton suisse à accorder le droit de vote aux femmes est le canton …", "a": ["du Valais", "de Vaud", "de Bâle", "de Zurich"], "c": 1, "t": "Histoire", "l": "Canton"}, {"id": 110, "q": "L'actuelle Constitution du Canton de Vaud date de …", "a": ["1848", "1885", "1945", "2003"], "c": 3, "t": "Histoire", "l": "Canton"}, {"id": 111, "q": "Qui était le général de l'armée suisse pendant la deuxième guerre mondiale ?", "a": ["Le vaudois Henri Guisan", "L'argovien Hans Herzog", "Le zurichois Ulrich Wille", "Le genevois Guillaume Henri Dufour"], "c": 0, "t": "Histoire", "l": "Canton"}, {"id": 112, "q": "En quelle année l’Exposition nationale a-t-elle été organisée à Lausanne ?", "a": ["En 2002", "En 1964", "En 1930", "En 1956"], "c": 1, "t": "Histoire", "l": "Canton"}, {"id": 113, "q": "Quel est le plat culinaire typique du canton de Vaud ?", "a": ["La raclette", "Le papet", "Les rösti", "La fondue"], "c": 1, "t": "Social", "l": "Canton"}, {"id": 114, "q": "Dans quel canton l'italien est-elle la langue principale ?", "a": ["Valais", "Tessin", "Saint-Gall", "Glaris"], "c": 1, "t": "Social", "l": "Canton"}, {"id": 115, "q": "Où se trouvent le Musée Olympique et le siège du Comité international olympique (CIO) ?", "a": ["Villeneuve", "Lausanne", "Morges", "Genève"], "c": 1, "t": "Social", "l": "Canton"}, {"id": 116, "q": "Où a lieu chaque année le meeting d'athlétisme \"Athletissima\" ?", "a": ["Lausanne", "Payerne", "Vevey", "Montreux"], "c": 0, "t": "Social", "l": "Canton"}, {"id": 117, "q": "Dans quelle ville a lieu le festival du \"Paléo\" ?", "a": ["Nyon", "Morges", "Lausanne", "Montreux"], "c": 0, "t": "Social", "l": "Canton"}, {"id": 118, "q": "Où se déroule le Festival de Jazz créé par Claude Nobs ?", "a": ["Yverdon-les-Bains", "Montreux", "Nyon", "Genève"], "c": 1, "t": "Social", "l": "Canton"}, {"id": 119, "q": "Quel célèbre ballet est établi à Lausanne ?", "a": ["Ballet Jobin", "Ballet Juvet", "Ballet Godard", "Ballet Béjart"], "c": 3, "t": "Social", "l": "Canton"}, {"id": 120, "q": "Où se trouve le musée créé à la mémoire de Charlie Chaplin ?", "a": ["Yverdon-les-Bains", "Nyon", "Corsier-sur-Vevey", "Lausanne"], "c": 2, "t": "Social", "l": "Canton"}, {"id": 121, "q": "Quel bâtiment a été inauguré à Lausanne le 14 avril 2017 ?", "a": ["Maison du sport international", "Palais de Beaulieu", "Parlement vaudois", "Opéra de Lausanne"], "c": 2, "t": "Social", "l": "Canton"}, {"id": 122, "q": "Où est célébrée la \"Fête des Vignerons\" ?", "a": ["Vevey", "Morges", "Aigle", "Sion"], "c": 0, "t": "Social", "l": "Canton"}, {"id": 123, "q": "Quelle grande école polytechnique se trouve dans la région de Lausanne ?", "a": ["l’UNIL", "l’EPFL", "la HEP", "la HEG"], "c": 1, "t": "Social", "l": "Canton"}, {"id": 124, "q": "A quelle date symbolique le Château cantonal Saint-Maire a-t-il ouvert ses portes après plus de deux ans de travaux ?", "a": ["25 décembre 2017", "15 novembre 1315", "14 février 2000", "14 avril 2018"], "c": 3, "t": "Social", "l": "Canton"}, {"id": 125, "q": "Quel grand tennisman suisse et vaudois est né à Lausanne en 1985 ?", "a": ["Marc Rosset", "Stanislas Wawrinka", "Yannick Noah", "Roger Federer"], "c": 1, "t": "Social", "l": "Canton"}, {"id": 126, "q": "Le réseau de transport public dans le canton de Vaud s'appelle …", "a": ["mobilis", "transN", "tpf", "tpg"], "c": 0, "t": "Social", "l": "Canton"}, {"id": 127, "q": "Dans quelle ville vaudoise y a-t-il un métro ?", "a": ["Vevey", "Nyon", "Montreux", "Lausanne"], "c": 3, "t": "Social", "l": "Canton"}, {"id": 128, "q": "Dans quelle ville se trouve le musée de l'alimentation ?", "a": ["Rolle", "Gland", "Vevey", "Yverdon-les-Bains"], "c": 2, "t": "Social", "l": "Canton"}, {"id": 33103, "q": "Combien de clubs de foot pratiquent leur sport sur les terrains de la commune ?", "a": ["2", "4", "6", "8"], "c": 0, "t": "Social", "l": "Commune"}, {"id": 33104, "q": "Quel est le nombre de publication par année du journal communal ?", "a": ["Il n’y a pas de journal communal", "1 fois par mois", "1 fois par année", "4 fois par année"], "c": 3, "t": "Social", "l": "Commune"}, {"id": 33105, "q": "Qu’est-ce que le Cotterd ?", "a": ["Réunion des villageois autour d’un petit verre de vin blanc de la région", "Soupe du 1er de l’an", "Association des amis de la Côte", "Nettoyage des rives des cours d’eau"], "c": 0, "t": "Social", "l": "Commune"}, {"id": 33106, "q": "Dans quel village se trouve l’auberge communale ?", "a": ["Colombier", "Echichens", "Monnaz", "St-Saphorin-sur-Morges"], "c": 0, "t": "Social", "l": "Commune"}, {"id": 33107, "q": "Quel est le nom du chœur mixte de la commune ?", "a": ["Les Mouettes", "La Récréation", "La Villanelle", "L’envol"], "c": 2, "t": "Social", "l": "Commune"}, {"id": 33108, "q": "Dans quel village peut-on pratiquer du tennis", "a": ["Colombier", "Echichens", "Monnaz", "Saint-Saphorin"], "c": 0, "t": "Social", "l": "Commune"}, {"id": 33109, "q": "Parmi les Fondations suivantes, laquelle ne se situe pas sur le territoire communal ?", "a": ["Fondation Cité Radieuse", "Fondation Perceval", "Fondation Ecole Pestalozzi", "Fondation Silo"], "c": 1, "t": "Social", "l": "Commune"}, {"id": 33110, "q": "Qu’a inventé Georges de Mestral, du village de Saint-Saphorin en 1951 ?", "a": ["Les déodorants Roll-on", "Les panneaux solaires", "Le velcro", "Le four micro-ondes"], "c": 2, "t": "Social", "l": "Commune"}, {"id": 33111, "q": "Avec quelle commune Echichens est-elle jumelée ?", "a": ["Nantes", "Saint-Fiacre-sur-Maine", "Saint-Colomban", "Vertou"], "c": 1, "t": "Histoire", "l": "Commune"}, {"id": 33112, "q": "Combien de châteaux existent sur le territoire communal ?", "a": ["2", "4", "6", "8"], "c": 1, "t": "Histoire", "l": "Commune"}, {"id": 33113, "q": "Pourquoi, en 1802, la plus grande partie des archives du village d'Echichens ont disparu ?", "a": ["Elles ont été brûlées lors de la révolte campagnarde des Bourla-papey", "Elles ont été détruites par les mites à papier", "Elles ont été détruites lors d'une inondation", "Elles ont été détruites lors de l'incendie d'une partie du château"], "c": 0, "t": "Histoire", "l": "Commune"}, {"id": 33114, "q": "Comment appelle-t-on les habitants d’Echichens ?", "a": ["Les Jars", "Echichanois", "Echichanais", "Les Ronges-Bornes"], "c": 2, "t": "Histoire", "l": "Commune"}, {"id": 33115, "q": "Quel autre nom porte le bâtiment de l’Administration communale ?", "a": ["La Ferme de Champanel", "La Ferme des Jars", "La Ferme de Chaudabronnaz", "La Ferme du Château"], "c": 3, "t": "Histoire", "l": "Commune"}, {"id": 33116, "q": "Quel événement a célébré le village de Colombier en 1987 ?", "a": ["Les 1000 ans de sa création", "Les 800 ans de sa création", "Les 500 ans de sa création", "Les 300 ans de sa création"], "c": 0, "t": "Histoire", "l": "Commune"}, {"id": 33117, "q": "De quelle origine vient le nom de Monnaz ?", "a": ["Celte et signifie « eau »", "Burgonde (origine allemande) et signifie « Moine »", "Romain et signifie « Monarque »", "Arabe et signifie « le parc »"], "c": 0, "t": "Histoire", "l": "Commune"}, {"id": 33118, "q": "A qui les chevaliers de Saint-Saphorin-sur-Morges prêtaient hommage?", "a": ["A la Reine Berthe", "Au Duc Amédée de Savoie", "Au Seigneur de Colombier", "Aux Seigneurs de Cossonay"], "c": 3, "t": "Histoire", "l": "Commune"}, {"id": 33119, "q": "La Municipalité est composée de …", "a": ["3 membres", "5 membres", "7 membres", "9 membres"], "c": 1, "t": "Politique", "l": "Commune"}, {"id": 33120, "q": "A quelle date a eu lieu la fusion entre les communes de Colombier, Echichens, Monnaz et St-Saphorin-sur-Morges ?", "a": ["1er janvier 2010", "1er juillet 2010", "1er janvier 2011", "1er juillet 2011"], "c": 3, "t": "Politique", "l": "Commune"}, {"id": 33121, "q": "Combien de membres compose le Conseil communal ?", "a": ["40", "50", "60", "70"], "c": 1, "t": "Politique", "l": "Commune"}, {"id": 33122, "q": "Où siège habituellement le Conseil communal ?", "a": ["Colombier", "Echichens", "Monnaz", "St-Saphorin-sur-Morges"], "c": 1, "t": "Politique", "l": "Commune"}, {"id": 33123, "q": "Quelle est la durée d’une législature au niveau communal ?", "a": ["4 ans", "5 ans", "7 ans", "10 ans"], "c": 1, "t": "Politique", "l": "Commune"}, {"id": 33124, "q": "Quelles sont les couleurs de l’écusson de la commune ?", "a": ["Bleu, blanc, rouge, vert", "Violet, noir, blanc", "Bleu, blanc, jaune, vert, brun", "Rouge, noir"], "c": 2, "t": "Politique", "l": "Commune"}, {"id": 33125, "q": "De quel district fait partie la commune ?", "a": ["Morges", "Nyon", "Aubonne", "Ouest Lausannois"], "c": 0, "t": "Politique", "l": "Commune"}, {"id": 33126, "q": "Quel pouvoir représente la Municipalité ?", "a": ["Le pouvoir judiciaire", "Le pouvoir législatif", "Le pouvoir exécutif", "Aucun pouvoir"], "c": 2, "t": "Politique", "l": "Commune"}, {"id": 33127, "q": "Quels sont les 2 cours d’eau (ruisseau, rivière) qui se situent sur le territoire communal ?", "a": ["La Morges, la Venoge", "La Morges, la Senoge", "Le Baillon, le Veyron", "La Vuachère, le Boiron"], "c": 1, "t": "Géographie", "l": "Commune"}, {"id": 33128, "q": "Comment s’appelle le collège de Colombier ?", "a": ["Collège du Bas", "Collège Bellicot", "Collège en Pontet", "Collège du Grand-Record"], "c": 2, "t": "Géographie", "l": "Commune"}, {"id": 33129, "q": "Quelles sont les 3 communes qui ont une frontière avec le territoire de la commune d’Echichens ?", "a": ["Vufflens-la-Ville, Lully, Aclens", "Tolochenaz, Denens, Morges", "Vullierens, Reverolle, Cottens", "Clarmont, Vufflens-le-Château, Bremblens"], "c": 3, "t": "Géographie", "l": "Commune"}, {"id": 33130, "q": "Quelle est l’altitude officielle de la commune ?", "a": ["380 mètres", "466 mètres", "550 mètres", "612 mètres"], "c": 1, "t": "Géographie", "l": "Commune"}, {"id": 33131, "q": "D’où provient l’eau potable qui alimente les villages de Colombier, Echichens et Saint-Saphorin-sur-Morges ?", "a": ["Des captages du Morand (Montricher)", "Du lac de Joux", "Du lac Léman", "De la Source de l’Orbe"], "c": 0, "t": "Géographie", "l": "Commune"}, {"id": 33132, "q": "Quel est le lac le plus proche de la commune ?", "a": ["Lac de Joux", "Lac Léman", "Lac de Neuchâtel", "Lac de Bret"], "c": 1, "t": "Géographie", "l": "Commune"}, {"id": 33133, "q": "Quelle est l’adresse de l’Administration communale ?", "a": ["Route de la Maladaz 17", "Chemin du Chêne 28", "Route du Bois 14", "Route du Village 16"], "c": 3, "t": "Géographie", "l": "Commune"}, {"id": 33134, "q": "Comment s’appelle le quartier construit en 2017 au sud du Village d’Echichens ?", "a": ["En Chaudabronnaz", "En Grassiaz", "Les Pétoleyres", "Au Vernaz"], "c": 1, "t": "Géographie", "l": "Commune"}, {"id": 33135, "q": "Quel est le village le plus au nord de la commune ?", "a": ["Colombier", "Echichens", "Monnaz", "St-Saphorin"], "c": 0, "t": "Géographie", "l": "Commune"}];
+const KEY = 'natu-vd-v1';
+const CONFIG = {"exam": null, "when": "décembre 2026 · heure à confirmer · Webex", "commune": "Echichens", "api": null};
+const EXAM = CONFIG.exam ? new Date(CONFIG.exam) : null;
+const LEVELS = ['Suisse', 'Canton', 'Commune'];
+const LEVEL_LABEL = { Suisse: 'Suisse', Canton: 'Canton de Vaud', Commune: CONFIG.commune || 'Commune' };
+const THEMES = ['Géographie', 'Histoire', 'Politique', 'Social'];
+const MODES = [
+  { k: 'revision', t: 'Révision', d: '20 questions choisies pour toi : les ratées reviennent vite.' },
+  { k: 'oral', t: 'Oral', d: 'Sans les choix, tu réponds à voix haute. Comme le jour J.' },
+  { k: 'exam', t: 'Examen blanc', d: '30 questions au hasard, sans aide.' },
+  { k: 'errors', t: 'Mes erreurs', d: 'Seulement les questions ratées et pas encore acquises.' }
+];
+const MODE_NAME = Object.fromEntries(MODES.map(m => [m.k, m.t]));
+const GAP = [0, 3, 8, 20, 45, 90];   // Leitner: answers elapsed before a box is due again
+
+const DEF = () => ({ p: {}, lv: ['Suisse', 'Canton'], th: THEMES.slice(), mode: 'revision', speak: false, n: 0, hist: [], days: {} });
+let st = load();
+function load() {
+  try {
+    return normalise(JSON.parse(localStorage.getItem(KEY) || '{}'));
+  } catch (e) { return DEF(); }
+}
+function normalise(raw) {
+  try {
+    const s = Object.assign(DEF(), raw || {}); s.hist = s.hist || []; s.days = s.days || {}; s.p = s.p || {};
+    // v1 records (21.10.2026) had no miss/lastOk and no session log: rebuild what can be rebuilt
+    let legacyN = 0, legacyOk = 0;
+    Object.values(s.p).forEach(r => {
+      if (r.miss === undefined) { r.miss = Math.max(0, r.seen - r.ok); r.lastOk = r.seen ? r.b > 0 : null; legacyN += r.seen; legacyOk += r.ok; }
+    });
+    if (legacyN && !s.hist.length) { s.hist.push({ at: Date.now(), mode: 'revision', n: legacyN, right: legacyOk, legacy: true }); s.days[dayKey()] = (s.days[dayKey()] || 0) + legacyN; }
+    return s;
+  }
+  catch (e) { return DEF(); }
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} push(); }
+
+// ---------- optional server sync (set --api in build.py; otherwise progress stays on the device) ----------
+// Server copy first, localStorage as offline fallback. A device only pushes after it has
+// pulled once, and never pushes over a server copy that holds more answers or sessions.
+const API = CONFIG.api || null;
+const SYNC = { pulled: false, timer: null, state: 'local', busy: null };
+// Merge two states without losing an answer from either side: per question the record that has
+// seen more answers wins, sessions are unioned, daily counts take the max. Settings stay local.
+function merge(loc, srv) {
+  if (!srv || typeof srv.p !== 'object') return loc;
+  const out = Object.assign({}, loc, { p: {}, hist: [], days: {} });
+  new Set([...Object.keys(loc.p || {}), ...Object.keys(srv.p || {})]).forEach(id => {
+    const a = (loc.p || {})[id], b = (srv.p || {})[id];
+    out.p[id] = !a ? b : !b ? a : (b.seen > a.seen ? b : a);
+  });
+  const seen = new Set();
+  [...(srv.hist || []), ...(loc.hist || [])].forEach(h => { const k = h.at + '|' + h.mode + '|' + h.n; if (!seen.has(k)) { seen.add(k); out.hist.push(h); } });
+  out.hist.sort((x, y) => x.at - y.at); if (out.hist.length > 300) out.hist = out.hist.slice(-300);
+  // a v1 migration on two devices would make two "legacy" rows; keep the larger one
+  const leg = out.hist.filter(h => h.legacy);
+  if (leg.length > 1) { const keep = leg.reduce((m, h) => h.n > m.n ? h : m); out.hist = out.hist.filter(h => !h.legacy || h === keep); }
+  [loc.days || {}, srv.days || {}].forEach(d => Object.keys(d).forEach(k => { out.days[k] = Math.max(out.days[k] || 0, d[k]); }));
+  out.n = Math.max(loc.n || 0, srv.n || 0);
+  return out;
+}
+function syncBadge(s) {
+  SYNC.state = s;
+  const el = document.getElementById('sync'); if (!el) return;
+  el.textContent = { ok: 'Synchronisé', local: 'Sur cet appareil seulement', off: 'Hors ligne · enregistré sur l\'appareil' }[s] || '';
+  el.className = 'syncb ' + s;
+}
+function getServer() { return fetch(API, { cache: 'no-store' }).then(r => { if (!r.ok) throw r.status; return r.json(); }); }
+function adopt(next) {
+  const changed = JSON.stringify(next) !== JSON.stringify(st);
+  st = next; try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {}
+  if (changed && !document.getElementById('home').classList.contains('hidden')) renderHome();
+}
+function sync() {
+  // pull, merge, and push back only if the merge holds something the server lacks
+  if (!API) { syncBadge('local'); return Promise.resolve(); }
+  if (SYNC.busy) return SYNC.busy;
+  SYNC.busy = getServer().then(srv => {
+    const hasSrv = srv && typeof srv.p === 'object';
+    const merged = hasSrv ? merge(st, srv) : st;
+    adopt(merged);
+    SYNC.pulled = true;
+    const srvView = hasSrv ? JSON.stringify({ p: srv.p, hist: srv.hist, days: srv.days, n: srv.n }) : '';
+    const myView = JSON.stringify({ p: merged.p, hist: merged.hist, days: merged.days, n: merged.n });
+    if (srvView === myView) { syncBadge('ok'); return; }
+    return fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(merged), keepalive: true })
+      .then(r => r.json()).then(j => syncBadge(j && j.ok ? 'ok' : 'off'));
+  }).catch(() => syncBadge('off')).finally(() => { SYNC.busy = null; });
+  return SYNC.busy;
+}
+function push() { clearTimeout(SYNC.timer); SYNC.timer = setTimeout(sync, 700); }
+function pull() { return sync(); }
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && document.getElementById('quiz').classList.contains('hidden')) pull();
+});
+function rec(id) { return st.p[id] || (st.p[id] = { b: 0, seen: 0, ok: 0, last: -1, miss: 0, lastOk: null }); }
+function peek(id) { return st.p[id] || { b: 0, seen: 0, ok: 0, miss: 0, lastOk: null }; }
+function status(id) { const r = peek(id); if (!r.seen) return 'n'; if (r.lastOk === false) return 'w'; return r.b >= 3 ? 'm' : 'p'; }
+function pool() { return BANK.filter(x => st.lv.includes(x.l) && st.th.includes(x.t)); }
+const $ = id => document.getElementById(id);
+function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]); }
+function dayKey(d) { d = d || new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function pctClass(p) { return p >= 80 ? 'g' : p >= 60 ? 'a' : 'r'; }
+
+// ---------- home ----------
+function renderHome() {
+  // filters
+  const lv = $('levels'); lv.innerHTML = '';
+  LEVELS.forEach(l => {
+    const s = document.createElement('span');
+    s.className = 'chip' + (st.lv.includes(l) ? ' on' : '');
+    s.textContent = LEVEL_LABEL[l];
+    s.onclick = () => { st.lv = st.lv.includes(l) ? st.lv.filter(x => x !== l) : st.lv.concat(l); save(); renderHome(); };
+    lv.appendChild(s);
+  });
+  const th = $('themes'); th.innerHTML = '';
+  THEMES.forEach(t => {
+    const s = document.createElement('span');
+    s.className = 'chip' + (st.th.includes(t) ? ' on' : '');
+    s.textContent = t;
+    s.onclick = () => { st.th = st.th.includes(t) ? st.th.filter(x => x !== t) : st.th.concat(t); save(); renderHome(); };
+    th.appendChild(s);
+  });
+  const md = $('modes'); md.innerHTML = '';
+  MODES.forEach(m => {
+    const b = document.createElement('div');
+    b.className = 'mode' + (st.mode === m.k ? ' on' : '');
+    b.innerHTML = `<b>${m.t}</b><span>${m.d}</span>`;
+    b.onclick = () => { st.mode = m.k; save(); renderHome(); };
+    md.appendChild(b);
+  });
+  $('speak').classList.toggle('on', !!st.speak);
+
+  // counts over the audition scope (current level filter, all themes)
+  const scope = BANK.filter(x => st.lv.includes(x.l));
+  const c = { m: 0, p: 0, w: 0, n: 0 };
+  scope.forEach(x => c[status(x.id)]++);
+  const seen = scope.length - c.n;
+  $('tSeen').textContent = seen; $('tTot').textContent = scope.length;
+  $('tMast').textContent = c.m; $('tProg').textContent = c.p; $('tWeak').textContent = c.w;
+  $('hPct').textContent = (scope.length ? Math.round(100 * c.m / scope.length) : 0) + ' %';
+  const days = EXAM ? Math.max(0, Math.ceil((EXAM - new Date()) / 86400000)) : '–';
+  $('hDays').textContent = days;
+  $('hWhen').textContent = CONFIG.when || '';
+  $('hToday').textContent = st.days[dayKey()] || 0;
+  let streak = 0; const d = new Date();
+  if (!st.days[dayKey(d)]) d.setDate(d.getDate() - 1);
+  while (st.days[dayKey(d)]) { streak++; d.setDate(d.getDate() - 1); }
+  $('hStreak').textContent = streak;
+
+  // bars per level x theme
+  let h = '';
+  st.lv.forEach(l => {
+    h += `<div class="grouphead">${LEVEL_LABEL[l]}</div>`;
+    THEMES.forEach(t => {
+      const xs = BANK.filter(x => x.l === l && x.t === t);
+      const k = { m: 0, p: 0, w: 0, n: 0 }; xs.forEach(x => k[status(x.id)]++);
+      const w = v => (100 * v / xs.length) + '%';
+      h += `<div class="trow"><span>${t}</span><div class="sbar"><i class="c-m" style="width:${w(k.m)}"></i><i class="c-p" style="width:${w(k.p)}"></i><i class="c-w" style="width:${w(k.w)}"></i></div><span class="n">${k.m}/${xs.length}</span></div>`;
+    });
+  });
+  $('bars').innerHTML = h;
+
+  // last 7 days
+  const wk = $('week'); wk.innerHTML = '';
+  const names = ['di', 'lu', 'ma', 'me', 'je', 've', 'sa'];
+  const vals = []; for (let i = 6; i >= 0; i--) { const x = new Date(); x.setDate(x.getDate() - i); vals.push([x, st.days[dayKey(x)] || 0]); }
+  const mx = Math.max(20, ...vals.map(v => v[1]));
+  vals.forEach(([x, v]) => {
+    const e = document.createElement('div');
+    e.innerHTML = `<i title="${v} réponses"><em style="height:${100 * v / mx}%"></em></i>${names[x.getDay()]}`;
+    wk.appendChild(e);
+  });
+
+  // history
+  const hs = st.hist.slice(-15).reverse();
+  $('histEmpty').classList.toggle('hidden', hs.length > 0);
+  $('hist').innerHTML = hs.map(s => {
+    const p = Math.round(100 * s.right / s.n);
+    const dt = new Date(s.at);
+    const when = dt.toLocaleDateString('fr-CH', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · ' + dt.toLocaleTimeString('fr-CH', { hour: '2-digit', minute: '2-digit' });
+    const dur = s.sec ? ` · ${Math.max(1, Math.round(s.sec / 60))} min` : '';
+    return `<li><div><div class="t">${s.legacy ? 'Sessions précédentes (avant la mise à jour)' : (MODE_NAME[s.mode] || s.mode)}${s.partial ? ' (interrompue)' : ''}</div><div class="d">${s.legacy ? 'tes premières réponses' : when + dur}</div></div><span class="pill ${pctClass(p)}">${s.right}/${s.n} · ${p} %</span></li>`;
+  }).join('');
+
+  // weakest
+  const weak = scope.filter(x => peek(x.id).miss > 0)
+    .sort((a, b) => (peek(b.id).miss - peek(b.id).ok * .5) - (peek(a.id).miss - peek(a.id).ok * .5)).slice(0, 8);
+  $('weakCard').classList.toggle('hidden', !weak.length);
+  $('weak').innerHTML = weak.map(x => `<li>${esc(x.q)}<br><b>${esc(x.a[x.c])}</b> <span class="sub">· ratée ${peek(x.id).miss}×</span></li>`).join('');
+}
+$('speak').onclick = () => { st.speak = !st.speak; save(); renderHome(); };
+
+// ---------- session ----------
+let S = null;
+function pickRevision(P) {
+  const due = P.filter(x => { const r = peek(x.id); return !r.seen || (st.n - r.last) >= GAP[r.b]; });
+  const src = due.length >= 5 ? due : P;
+  // weakest first: missed last time, then low box, then never seen
+  const score = x => { const r = peek(x.id); return (r.lastOk === false ? -10 : 0) + r.b + (r.seen ? 0 : 0.5); };
+  return shuffle(src).sort((a, b) => score(a) - score(b)).slice(0, 20);
+}
+function start(list) {
+  const P = pool();
+  if (!P.length) { alert('Aucune question avec ces filtres.'); return; }
+  let qs = list;
+  if (!qs) {
+    if (st.mode === 'exam') qs = shuffle(P).slice(0, 30);
+    else if (st.mode === 'errors') {
+      qs = shuffle(P.filter(x => peek(x.id).miss > 0 && peek(x.id).b < 3));
+      if (!qs.length) { alert('Aucune erreur en attente. Bravo.'); return; }
+    } else qs = pickRevision(P);
+  }
+  S = { qs, i: 0, right: 0, missed: [], mode: list ? 'errors' : st.mode, t0: Date.now(), streak: 0, best: 0 };
+  show('quiz'); ask();
+}
+function show(id) { ['home', 'quiz', 'result', 'list'].forEach(s => $(s).classList.toggle('hidden', s !== id)); window.scrollTo(0, 0); }
+
+function say(text) {
+  if (!st.speak || !window.speechSynthesis) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'fr-CH';
+  const v = speechSynthesis.getVoices().find(v => /^fr/.test(v.lang));
+  if (v) u.voice = v;
+  u.rate = 0.95;
+  speechSynthesis.speak(u);
+}
+
+function ask() {
+  const x = S.qs[S.i];
+  S.cur = x; S.done = false;
+  $('qpos').textContent = `${S.i + 1}/${S.qs.length}`;
+  $('qbar').style.width = (100 * S.i / S.qs.length) + '%';
+  $('qtag').textContent = `${LEVEL_LABEL[x.l]} · ${x.t}`;
+  $('qstreak').textContent = S.streak >= 3 ? `${S.streak} de suite` : '';
+  $('qtext').textContent = x.q;
+  $('fb').innerHTML = '';
+  $('next').classList.add('hidden');
+  const card = $('qcard'); card.classList.remove('qcard'); void card.offsetWidth; card.classList.add('qcard');
+  const oral = S.mode === 'oral';
+  $('opts').classList.toggle('hidden', oral);
+  $('oral').classList.toggle('hidden', !oral);
+  $('hint').textContent = oral ? 'Espace : montrer · ← je ne savais pas · → je savais' : 'Touches 1–4 pour répondre · Entrée pour continuer';
+  if (oral) {
+    $('ansBox').classList.add('hidden'); $('selfGrade').classList.add('hidden'); $('showAns').classList.remove('hidden');
+    say(x.q);
+    return;
+  }
+  S.order = shuffle([0, 1, 2, 3]);
+  $('opts').innerHTML = '';
+  S.order.forEach((ai, k) => {
+    const b = document.createElement('button');
+    b.className = 'opt';
+    b.innerHTML = `<span class="k">${'ABCD'[k]}</span><span></span>`;
+    b.lastChild.textContent = x.a[ai];
+    b.onclick = () => answer(k);
+    $('opts').appendChild(b);
+  });
+  say(x.q + '. ' + S.order.map((ai, k) => `${'ABCD'[k]}: ${x.a[ai]}`).join('. '));
+}
+
+function grade(ok, given) {
+  const x = S.cur, r = rec(x.id);
+  st.n++; r.seen++; r.last = st.n; r.lastOk = ok;
+  if (ok) { r.ok++; r.b = Math.min(5, r.b + 1); S.right++; S.streak++; S.best = Math.max(S.best, S.streak); }
+  else { r.b = 0; r.miss++; S.missed.push({ x, given }); S.streak = 0; }
+  const dk = dayKey(); st.days[dk] = (st.days[dk] || 0) + 1;
+  save();
+}
+
+const PRAISE = ['Exact.', 'Juste.', 'Bien vu.', 'Parfait.', 'Correct.'];
+function answer(k) {
+  if (S.done) return;
+  S.done = true;
+  const x = S.cur, ok = S.order[k] === x.c;
+  [...$('opts').children].forEach((b, j) => {
+    b.disabled = true;
+    if (S.order[j] === x.c) b.classList.add('ok');
+    else if (j === k) b.classList.add('ko');
+    else b.classList.add('dim');
+  });
+  grade(ok, ok ? null : x.a[S.order[k]]);
+  $('fb').innerHTML = ok
+    ? `<div class="fb ok"><b>${PRAISE[Math.floor(Math.random() * PRAISE.length)]}</b></div>`
+    : `<div class="fb ko">La bonne réponse : <b>${esc(x.a[x.c])}</b></div>`;
+  if (!ok) say('La bonne réponse : ' + x.a[x.c]);
+  $('qstreak').textContent = S.streak >= 3 ? `${S.streak} de suite` : '';
+  $('next').classList.remove('hidden');
+  $('next').textContent = S.i + 1 < S.qs.length ? 'Suivante →' : 'Voir le résultat';
+}
+
+$('showAns').onclick = () => {
+  const x = S.cur;
+  $('ansBox').innerHTML = `<b>${esc(x.a[x.c])}</b><div class="sub" style="margin-top:6px">Autres choix : ${x.a.filter((_, i) => i !== x.c).map(esc).join(' · ')}</div>`;
+  $('ansBox').classList.remove('hidden'); $('selfGrade').classList.remove('hidden'); $('showAns').classList.add('hidden');
+  say(x.a[x.c]);
+};
+$('gradeOk').onclick = () => { if (!S.done) { S.done = true; grade(true, null); next(); } };
+$('gradeKo').onclick = () => { if (!S.done) { S.done = true; grade(false, null); next(); } };
+
+function next() { S.i++; if (S.i < S.qs.length) ask(); else finish(false); }
+
+function finish(partial) {
+  if (window.speechSynthesis) speechSynthesis.cancel();
+  const n = partial ? S.i + (S.done ? 1 : 0) : S.qs.length;
+  if (n > 0) {
+    st.hist.push({ at: Date.now(), mode: S.mode, n, right: S.right, sec: Math.round((Date.now() - S.t0) / 1000), partial: partial || undefined });
+    if (st.hist.length > 300) st.hist = st.hist.slice(-300);
+    save();
+  }
+  if (!n) { show('home'); renderHome(); return; }
+  show('result');
+  const p = Math.round(100 * S.right / n);
+  $('rScore').textContent = p + ' %';
+  $('rOf').textContent = `${S.right} sur ${n}`;
+  const arc = $('ringArc');
+  arc.style.stroke = p >= 80 ? 'var(--green)' : p >= 60 ? 'var(--amber)' : 'var(--red)';
+  arc.style.strokeDashoffset = 402; requestAnimationFrame(() => requestAnimationFrame(() => { arc.style.strokeDashoffset = 402 * (1 - p / 100); }));
+  $('rMsg').textContent = p === 100 ? 'Sans faute.' : p >= 80 ? 'Très bonne série.' : p >= 60 ? 'Solide, on consolide.' : 'Normal au début. Elles reviendront.';
+  $('rSub').textContent = (S.best >= 3 ? `Meilleure série : ${S.best} de suite · ` : '') + `${Math.max(1, Math.round((Date.now() - S.t0) / 60000))} min`;
+  $('again').classList.toggle('hidden', !S.missed.length);
+  $('missedCard').classList.toggle('hidden', !S.missed.length);
+  $('missed').innerHTML = S.missed.map(m => `<li>${esc(m.x.q)}${m.given ? `<span class="y">${esc(m.given)}</span>` : ''}<span class="a">${esc(m.x.a[m.x.c])}</span></li>`).join('');
+}
+
+$('next').onclick = next;
+$('start').onclick = () => start();
+$('again').onclick = () => start(shuffle(S.missed.map(m => m.x)));
+$('quit').onclick = () => finish(true);
+$('back').onclick = $('back2').onclick = () => { show('home'); renderHome(); };
+$('reset').onclick = () => { if (confirm('Effacer toute la progression et l\'historique ?')) { const keep = { lv: st.lv, th: st.th, mode: st.mode, speak: st.speak }; st = Object.assign(DEF(), keep); save(); renderHome(); } };
+$('listBtn').onclick = () => {
+  $('listOl').innerHTML = pool().map(x => `<li>${esc(x.q)} <span class="sub">(${LEVEL_LABEL[x.l]} · ${x.t})</span><br><b>${esc(x.a[x.c])}</b></li>`).join('');
+  show('list');
+};
+$('exp').onclick = () => {
+  const code = btoa(unescape(encodeURIComponent(JSON.stringify(st))));
+  $('xfer').value = code; $('xfer').select();
+  try { navigator.clipboard.writeText(code); $('exp').textContent = 'Copié'; } catch (e) {}
+};
+$('imp').onclick = () => {
+  try {
+    const s = JSON.parse(decodeURIComponent(escape(atob($('xfer').value.trim()))));
+    if (!s || typeof s.p !== 'object') throw 0;
+    if (!confirm('Remplacer la progression de cet appareil par celle du code ?')) return;
+    st = Object.assign(DEF(), s); save(); renderHome(); $('xfer').value = ''; alert('Progression importée.');
+  } catch (e) { alert('Code illisible.'); }
+};
+document.addEventListener('keydown', e => {
+  if ($('quiz').classList.contains('hidden')) return;
+  if (S.mode !== 'oral' && /^[1-4]$/.test(e.key)) answer(+e.key - 1);
+  else if (S.mode !== 'oral' && /^[a-dA-D]$/.test(e.key)) answer('abcd'.indexOf(e.key.toLowerCase()));
+  else if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    if (S.mode === 'oral') { if (!$('showAns').classList.contains('hidden')) $('showAns').click(); }
+    else if (S.done) next();
+  } else if (S.mode === 'oral' && !$('selfGrade').classList.contains('hidden')) {
+    if (e.key === 'ArrowRight') $('gradeOk').click();
+    if (e.key === 'ArrowLeft') $('gradeKo').click();
+  }
+});
+renderHome();
+pull();
+</script>
+</body>
+</html>
